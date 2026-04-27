@@ -8,8 +8,8 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/poloos/include",
-                "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/poloos/src",
+                "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/Trekkinig_Marco_Polo/include",
+                "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/Trekkinig_Marco_Polo/src",
                 "C:/Users/gabri/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src",
                 "C:/Users/gabri/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                 "C:/Users/gabri/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
@@ -244,8 +244,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/poloos/include",
-                    "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/poloos/src",
+                    "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/Trekkinig_Marco_Polo/include",
+                    "C:/Users/gabri/OneDrive/Documentos/PlatformIO/Projects/Trekkinig_Marco_Polo/src",
                     "C:/Users/gabri/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src",
                     "C:/Users/gabri/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                     "C:/Users/gabri/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
