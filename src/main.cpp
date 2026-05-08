@@ -1,17 +1,15 @@
 #include "config.h"
-#include "esp_log_pollyfill.h"
 #include "state.h"
+#include "esp_log.h"
 
 #define LOG_TAG "APP"
 
-void setup() {
-    Serial.begin(115200);
+extern "C" {
+    void app_main();
 }
 
-void loop () {
-    char buffer[32];
-    sprintf(buffer, "Polo OS %s", VERSION);
-    ESP_LOGI_(LOG_TAG, buffer);
+void app_main () {
+    ESP_LOGI(LOG_TAG, "Polo OS %s", VERSION);
 
     static CommandStream commands;
     static CarControl ctrl;

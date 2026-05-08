@@ -1,10 +1,9 @@
 #pragma once
 
-#include <BluetoothSerial.h>
-
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
-#endif
+#include "esp_bt.h"
+#include "esp_bt_main.h"
+#include "esp_gap_bt_api.h"
+#include "esp_spp_api.h"
 
 enum class Command {
     NONE = 0,
@@ -34,7 +33,11 @@ class CommandStream final {
 
         Command next_command();
         bool has_commands();
-    
+        
+        void bt_callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param);
     private:
-        BluetoothSerial bt_serial;
-};
+        uint32_t client_handle;
+        uint8_t buffer[128];
+        size_t len;
+        uint8_t read_buffer();
+    };
