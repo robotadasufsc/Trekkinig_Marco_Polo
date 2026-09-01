@@ -1,13 +1,16 @@
 #include "state.h"
-
 #include <list>
+#include "esp_log.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "esp_timer.h"
 
-#include "esp_log_pollyfill.h"
+
 
 #define LOG_TAG "STATE"
 
 typedef struct {
-    unsigned long time;
+    int64_t time;
     Command command;
 } TimedCommand;
 
@@ -17,24 +20,24 @@ State debug_loop(CommandStream &cmds, CarControl &ctrl) {
     for(;;) {
         if(cmds.has_commands()) {
             switch(cmds.next_command()) {
-                case Command::NONE: ESP_LOGI_(LOG_TAG, "NONE"); break;
-                case Command::GO_FORWARD: ESP_LOGI_(LOG_TAG, "GO_FORWARD"); break;
-                case Command::GO_BACKWARDS: ESP_LOGI_(LOG_TAG, "GO_BACKWARDS"); break;
-                case Command::STOP: ESP_LOGI_(LOG_TAG, "STOP"); break;
-                case Command::POINT_LEFT: ESP_LOGI_(LOG_TAG, "POINT_LEFT"); break;
-                case Command::POINT_RIGHT: ESP_LOGI_(LOG_TAG, "POINT_RIGHT"); break;
-                case Command::POINT_AHEAD: ESP_LOGI_(LOG_TAG, "POINT_AHEAD"); break;
-                case Command::ABORT: ESP_LOGI_(LOG_TAG, "ABORT"); break;
-                case Command::BEGIN_RECORDING: ESP_LOGI_(LOG_TAG, "BEGIN_RECORDING"); break;
-                case Command::STOP_RECORDING: ESP_LOGI_(LOG_TAG, "STOP_RECORDING"); break;
-                case Command::PLAY_RECORDING: ESP_LOGI_(LOG_TAG, "PLAY_RECORDING"); break;
-                case Command::LIGHTS_ON: ESP_LOGI_(LOG_TAG,"LIGHTS_ON" ); break;
-                case Command::LIGHTS_OFF: ESP_LOGI_(LOG_TAG,"LIGHTS_OFF" ); break;
-                default: ESP_LOGI_(LOG_TAG, "???");
+                case Command::NONE: ESP_LOGI(LOG_TAG, "NONE"); break;
+                case Command::GO_FORWARD: ESP_LOGI(LOG_TAG, "GO_FORWARD"); break;
+                case Command::GO_BACKWARDS: ESP_LOGI(LOG_TAG, "GO_BACKWARDS"); break;
+                case Command::STOP: ESP_LOGI(LOG_TAG, "STOP"); break;
+                case Command::POINT_LEFT: ESP_LOGI(LOG_TAG, "POINT_LEFT"); break;
+                case Command::POINT_RIGHT: ESP_LOGI(LOG_TAG, "POINT_RIGHT"); break;
+                case Command::POINT_AHEAD: ESP_LOGI(LOG_TAG, "POINT_AHEAD"); break;
+                case Command::ABORT: ESP_LOGI(LOG_TAG, "ABORT"); break;
+                case Command::BEGIN_RECORDING: ESP_LOGI(LOG_TAG, "BEGIN_RECORDING"); break;
+                case Command::STOP_RECORDING: ESP_LOGI(LOG_TAG, "STOP_RECORDING"); break;
+                case Command::PLAY_RECORDING: ESP_LOGI(LOG_TAG, "PLAY_RECORDING"); break;
+                case Command::LIGHTS_ON: ESP_LOGI(LOG_TAG,"LIGHTS_ON" ); break;
+                case Command::LIGHTS_OFF: ESP_LOGI(LOG_TAG,"LIGHTS_OFF" ); break;
+                default: ESP_LOGI(LOG_TAG, "???");
             }
         }
     }
-    delay(1);
+    vTaskDelay(1);
 }
 
 State idle_loop(CommandStream &cmds, CarControl &ctrl) {
@@ -69,20 +72,22 @@ State idle_loop(CommandStream &cmds, CarControl &ctrl) {
                 case Command::LIGHTS_OFF:
                     ctrl.lights_off();
                     break;
+                default:
+                    break;
             }
         }
 
         ctrl.update_pins();
-        delay(1);
+        vTaskDelay(1);
     }
 }
 
 State recording_loop(CommandStream &cmds, CarControl &ctrl) {
     command_list.clear();
 
-    ESP_LOGI_(LOG_TAG, "Started recording commands");
+    ESP_LOGI(LOG_TAG, "Started recording commands");
 
-    auto begin = millis();
+    int64_t begin = esp_timer_get_time() / 10000;
 
     while(true) {
         while(cmds.has_commands()) {
@@ -107,7 +112,7 @@ State recording_loop(CommandStream &cmds, CarControl &ctrl) {
                     ctrl.point_right();
                     break;
                 case Command::STOP_RECORDING:
-                    ESP_LOGI_(LOG_TAG, "Finished recording commands");
+                    ESP_LOGI(LOG_TAG, "Finished recording commands");
                     return State::IDLE;
                 case Command::LIGHTS_ON:
                     ctrl.lights_on();
@@ -115,25 +120,27 @@ State recording_loop(CommandStream &cmds, CarControl &ctrl) {
                 case Command::LIGHTS_OFF:
                     ctrl.lights_off();
                     break;
+                default:
+                    break;
             }
 
-            command_list.emplace_back(TimedCommand { millis() - begin, cmd });
+            command_list.emplace_back(TimedCommand { esp_timer_get_time() / 10000ll - begin, cmd });
         }
 
         ctrl.update_pins();
-        delay(1);
+        vTaskDelay(1);
     }
 }
 
 State replicating_loop(CommandStream &cmds, CarControl &ctrl) {
-    ESP_LOGI_(LOG_TAG, "Starting to replicate saved path");
+    ESP_LOGI(LOG_TAG, "Starting to replicate saved path");
 
-    auto begin = millis();
+    auto begin = esp_timer_get_time() / 10000;
 
     for(TimedCommand tc : command_list) {
         auto next_command_time = begin + tc.time;
 
-        while(millis() < next_command_time) {
+        while(esp_timer_get_time() / 10000 < next_command_time) {
             while(cmds.has_commands()) {
                 auto command = cmds.next_command();
                 if(command == Command::ABORT) {
@@ -142,7 +149,7 @@ State replicating_loop(CommandStream &cmds, CarControl &ctrl) {
                 }
             }
             ctrl.update_pins();
-            delay(1);
+            vTaskDelay(1);
         }
 
         switch(tc.command) {
@@ -170,10 +177,12 @@ State replicating_loop(CommandStream &cmds, CarControl &ctrl) {
             case Command::LIGHTS_OFF:
                 ctrl.lights_off();
                 break;
+            default:
+                break;
         }
     }
 
-    ESP_LOGI_(LOG_TAG, "Finished replicating");
+    ESP_LOGI(LOG_TAG, "Finished replicating");
 
     return State::IDLE;
 }

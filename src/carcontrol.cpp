@@ -1,9 +1,7 @@
 #include "carcontrol.h"
-
 #include <cmath>
-
-#include "esp_log_pollyfill.h"
 #include <driver/ledc.h>
+#include "esp_log.h"
 
 #define LEDC_SPEED_MODE LEDC_HIGH_SPEED_MODE
 #define MOTOR_A_LEDC_CHANNEL LEDC_CHANNEL_0
@@ -21,7 +19,7 @@ CarControl::CarControl() :
         left_motor_a_pin(GPIO_NUM_2), left_motor_b_pin(GPIO_NUM_4), left_motor_speed_pin(GPIO_NUM_16),
         right_motor_a_pin(GPIO_NUM_27), right_motor_b_pin(GPIO_NUM_26), right_motor_speed_pin(GPIO_NUM_25),
         led_a_pin(GPIO_NUM_33), led_b_pin(GPIO_NUM_32),
-        left_motor_pwm(0), right_motor_pwm(0), left_motor_pwm_target(0), right_motor_pwm_target(0),
+        left_motor_pwm(0),left_motor_pwm_target(0),right_motor_pwm(0), right_motor_pwm_target(0),
         longitudinal_speed(CarLongitudinalMovement::STOPPED), alignment(CarHorizontalAlignment::CENTER), led_state(CarLedState::OFF)
 #endif
 {
@@ -40,7 +38,9 @@ CarControl::CarControl() :
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 1000,
         .clk_cfg = LEDC_AUTO_CLK,
+        .deconfigure = false,
     };
+
 
     ledc_timer_config(&ledc_timer);
 
@@ -50,6 +50,7 @@ CarControl::CarControl() :
         .channel = MOTOR_A_LEDC_CHANNEL,
         .timer_sel = LEDC_TIMER_0,
         .duty = 128,
+        .sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD,
     };
     ledc_channel_config_t motor_b_config = {
         .gpio_num = right_motor_speed_pin,
@@ -57,6 +58,7 @@ CarControl::CarControl() :
         .channel = MOTOR_B_LEDC_CHANNEL,
         .timer_sel = LEDC_TIMER_0,
         .duty = 128,
+        .sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD,
     };
 
     ledc_channel_config(&motor_a_config);
@@ -79,43 +81,43 @@ bool CarControl::reset() {
 }
 
 void CarControl::go_forward() {
-    ESP_LOGI_(LOG_TAG, "ahead");
+    ESP_LOGI(LOG_TAG, "ahead");
 
     this->longitudinal_speed = CarLongitudinalMovement::AHEAD;
 }
 
 void CarControl::go_backwards() {
-    ESP_LOGI_(LOG_TAG, "back");
+    ESP_LOGI(LOG_TAG, "back");
 
     this->longitudinal_speed = CarLongitudinalMovement::BEHIND;
 }
 
 void CarControl::stop() {
-    ESP_LOGI_(LOG_TAG, "stop");
+    ESP_LOGI(LOG_TAG, "stop");
 
     this->longitudinal_speed = CarLongitudinalMovement::STOPPED;
 }
 
 void CarControl::point_left() {
-    ESP_LOGI_(LOG_TAG, "left");
+    ESP_LOGI(LOG_TAG, "left");
 
     this->alignment = CarHorizontalAlignment::LEFT;
 }
 
 void CarControl::point_ahead() {
-    ESP_LOGI_(LOG_TAG, "middle");
+    ESP_LOGI(LOG_TAG, "middle");
 
     this->alignment = CarHorizontalAlignment::CENTER;
 }
 
 void CarControl::point_right() {
-    ESP_LOGI_(LOG_TAG, "right");
+    ESP_LOGI(LOG_TAG, "right");
 
     this->alignment = CarHorizontalAlignment::RIGHT;
 }
 
 void CarControl::update_pins() {
-    int l, r;
+    int l = 0, r = 0;
 
     switch(this->longitudinal_speed) {
         case CarLongitudinalMovement::STOPPED:
@@ -144,6 +146,8 @@ void CarControl::update_pins() {
                 case CarHorizontalAlignment::RIGHT:
                     r = 128;
                     break;
+                    default:
+                    break;
             }
             break;
         case CarLongitudinalMovement::BEHIND:
@@ -155,6 +159,8 @@ void CarControl::update_pins() {
                     break;
                 case CarHorizontalAlignment::RIGHT:
                     r = -128;
+                    break;
+                    default:
                     break;
             }
     }
@@ -176,8 +182,8 @@ void CarControl::update_pins() {
     gpio_set_level(this->left_motor_b_pin, this->left_motor_pwm < 0 ? 1 : 0);
     //gpio_set_level(this->left_motor_speed_pin, this->left_motor_pwm != 0 ? 1 : 0);
     if(ledc_set_duty_and_update(LEDC_SPEED_MODE, MOTOR_A_LEDC_CHANNEL, std::abs(this->left_motor_pwm), 0) != ESP_OK) {
-        ESP_LOGI_(LOG_TAG, "Bad");
-        ESP_LOGI_(LOG_TAG, std::abs(this->left_motor_pwm));
+        ESP_LOGI(LOG_TAG, "Bad");
+        ESP_LOGI(LOG_TAG, "%d", std::abs(this->left_motor_pwm));
     }
     gpio_set_level(this->right_motor_a_pin, right_motor_pwm < 0 ? 1 : 0);
     gpio_set_level(this->right_motor_b_pin, right_motor_pwm > 0 ? 1 : 0);
