@@ -11,4 +11,9 @@ O sistema usado pelo Marco Polo, o robô de Trekking da [Robota](https://www.ins
 
 ## Esquema de Ligações
 
+## Compilação
 
+Antes de compilar é necessário configurar o Bluetooth para funcionar no modo clássico, para isso basta abrir o menuconfig, selecionar as opções "Component config" > "Bluetooth", e mudar as seguintes opções:
+
+- "Bluetooth" > "Host" para "Bluetooth - Dual-mode"
+- "Controller Options" > "Bluetooth controller mode" para "BR/EDR Only"

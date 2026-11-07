@@ -1,15 +1,14 @@
-#include <cstddef>
 #include <cstdint>
 
 #include <driver/gpio.h>
+#include "motors.h"
 
 enum class CarLongitudinalMovement { AHEAD, STOPPED, BEHIND };
 enum class CarHorizontalAlignment { LEFT, CENTER, RIGHT };
-enum class CarLedState { ON, OFF };
 
-class CarControl {
+class CarControl final {
     public:
-        CarControl();
+        CarControl(const motors_config_t *config);
 
         bool reset();
 
@@ -43,21 +42,15 @@ class CarControl {
          */
         void point_right();
 
-        void lights_on();
-
-        void lights_off();
-
-        void toggle_lights();
-
-        void update_pins();
+        void update_signals();
     
     private:
-        gpio_num_t left_motor_a_pin, left_motor_b_pin, left_motor_speed_pin;
-        gpio_num_t right_motor_a_pin, right_motor_b_pin, right_motor_speed_pin;
-        gpio_num_t led_a_pin, led_b_pin;
-        ssize_t left_motor_pwm, left_motor_pwm_target;
-        ssize_t right_motor_pwm, right_motor_pwm_target;
+        Motors motor_control;
+        int32_t max_speed;
+        int32_t speed_left, speed_right;
+        int32_t target_speed_left, target_speed_right;
         CarLongitudinalMovement longitudinal_speed;
         CarHorizontalAlignment alignment;
-        CarLedState led_state;
+
+        void update_targets();
 };

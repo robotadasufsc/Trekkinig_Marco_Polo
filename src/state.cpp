@@ -67,17 +67,17 @@ State idle_loop(CommandStream &cmds, CarControl &ctrl) {
                 case Command::PLAY_RECORDING:
                     return State::REPLICATING;
                 case Command::LIGHTS_ON:
-                    ctrl.lights_on();
+                    // TODO
                     break;
                 case Command::LIGHTS_OFF:
-                    ctrl.lights_off();
+                    // TODO
                     break;
                 default:
                     break;
             }
         }
 
-        ctrl.update_pins();
+        ctrl.update_signals();
         vTaskDelay(1);
     }
 }
@@ -115,10 +115,10 @@ State recording_loop(CommandStream &cmds, CarControl &ctrl) {
                     ESP_LOGI(LOG_TAG, "Finished recording commands");
                     return State::IDLE;
                 case Command::LIGHTS_ON:
-                    ctrl.lights_on();
+                    // TODO
                     break;
                 case Command::LIGHTS_OFF:
-                    ctrl.lights_off();
+                    // TODO
                     break;
                 default:
                     break;
@@ -127,7 +127,7 @@ State recording_loop(CommandStream &cmds, CarControl &ctrl) {
             command_list.emplace_back(TimedCommand { esp_timer_get_time() / 10000ll - begin, cmd });
         }
 
-        ctrl.update_pins();
+        ctrl.update_signals();
         vTaskDelay(1);
     }
 }
@@ -148,7 +148,7 @@ State replicating_loop(CommandStream &cmds, CarControl &ctrl) {
                     return State::IDLE;
                 }
             }
-            ctrl.update_pins();
+            ctrl.update_signals();
             vTaskDelay(1);
         }
 
@@ -172,10 +172,10 @@ State replicating_loop(CommandStream &cmds, CarControl &ctrl) {
                 ctrl.point_right();
                 break;
             case Command::LIGHTS_ON:
-                ctrl.lights_on();
+                // TODO
                 break;
             case Command::LIGHTS_OFF:
-                ctrl.lights_off();
+                // TODO
                 break;
             default:
                 break;
